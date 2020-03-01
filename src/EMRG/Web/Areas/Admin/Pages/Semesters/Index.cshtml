@@ -20,7 +20,9 @@
             <th>
                 @Html.DisplayNameFor(model => model.Semester[0].Year)
             </th>
-            <th></th>
+            <th>Action</th>
+
+            <th>Advising</th>
         </tr>
     </thead>
     <tbody>
@@ -32,10 +34,29 @@
             <td>
                 @Html.DisplayFor(modelItem => item.Year)
             </td>
-            <td class="text-right">
-                @*<a asp-page="./Edit" asp-route-id="@item.Id">Edit</a> |*@
-                <a asp-page="./Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-page="./Delete" asp-route-id="@item.Id">Delete</a>
+            
+            <td class="text-right d-inline-flex">
+                <a asp-page="./Delete" class="btn btn-danger" asp-route-id="@item.Id">Delete</a>
+                
+            </td>
+            <td>
+                <form method="post">
+                    <input asp-for="semester.Id" type="hidden" value="@item.Id" />
+
+                    @if (item.isActive == true)
+                    {
+                        <input type="submit" value="End Advising"
+                               class="btn btn-primary btn-danger"
+                               asp-page-handler="EndSemester" />
+                    }
+                    else
+                    {
+                        <input type="submit" value="Start Advising"
+                               class="btn btn-primary btn-success"
+                               asp-page-handler="SartSemester" />
+                    }
+
+                </form>
             </td>
         </tr>
 }

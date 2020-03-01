@@ -109,7 +109,7 @@ namespace Web.Areas.Admin.Pages.Students
             //        RequireNonAlphanumeric = true
             //    }
             //);
-            var password = "12345678";
+            var password = "#Arefin555";
 
             var result = await _userManager.CreateAsync(user, password);
             if (result.Succeeded)

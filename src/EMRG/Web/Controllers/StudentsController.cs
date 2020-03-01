@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Data.Core;
 using Domain;
+using Brotal.Extensions;
 
 namespace Web.Controllers
 {
@@ -24,6 +25,14 @@ namespace Web.Controllers
         {
             IList<Student> student = (await _db.Students.GetAll())
                                     .ToList();
+            student.ForEach(s => {
+                s.Department = null;
+                s.Program = null;
+                s.Enrollments.ForEach(e =>
+                {
+                    e.Student = null;
+                });
+            });
 
             return new JsonResult(student);
         }

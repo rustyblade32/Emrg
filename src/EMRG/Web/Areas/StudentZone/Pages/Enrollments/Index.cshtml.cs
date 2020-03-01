@@ -7,16 +7,18 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Data.Core;
 using Domain;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Identity;
 
-namespace Web.Areas.Admin.Pages.Students
+namespace Web.Areas.StudentZone.Pages.Enrollments
 {
-    public class CourseEnrollmentModel : PageModel
+    public class IndexModel : PageModel
     {
         private readonly IUnitOfWork _db;
 
-        public CourseEnrollmentModel(IUnitOfWork db)
+        public IndexModel(IUnitOfWork db, UserManager<AppUser> usermanager)
         {
             _db = db;
+            Usermanager = usermanager;
         }
 
         [BindProperty]
@@ -39,33 +41,45 @@ namespace Web.Areas.Admin.Pages.Students
 
         [BindProperty]
         public CourseEnrollment Enrollment { get; set; }
+        public UserManager<AppUser> Usermanager { get; }
 
-        public async Task<IActionResult> OnGet(int? id)
+        public async Task<IActionResult> OnGet()
         {
-            if(id == null)
+            var user = await Usermanager.GetUserAsync(User);
+            Student = (await _db.Students.GetAll())
+                            .Where(x => x.StudentId.ToString() == user.UserName)
+                            .FirstOrDefault();
+
+
+            Semesters = (await _db.Semesters.GetAll())
+                            .Where(x => x.isActive == true).ToList();
+
+            Courses = (await _db.Courses.GetAll()).ToList();
+
+            if (Semesters.Count() == 0)
             {
-                return NotFound();
+                ViewData["Title"] = "Advising Not Started";
             }
 
-            Semesters = (await _db.Semesters.GetAll()).ToList();
-            Courses = (await _db.Courses.GetAll()).ToList();
-            Student = await _db.Students.GetById((int)id);
+            else
+            {
+                ViewData["Title"] = "Advising";
+                ViewData["CourseId"] =
+                    new SelectList(
+                        Courses,
+                        nameof(Course.Id),
+                        nameof(Course.Code));
 
-            ViewData["CourseId"] =
-                new SelectList(
-                    Courses,
-                    nameof(Course.Id),
-                    nameof(Course.Code));
-            ViewData["SemesterId"] =
-                new SelectList(
-                    Semesters,
-                    nameof(Semester.Id),
-                    nameof(Semester.Name));
-
+                ViewData["SemesterId"] =
+                    new SelectList(
+                        Semesters,
+                        nameof(Semester.Id),
+                        nameof(Semester.Name));
+            }
 
             return Page();
-        }
 
+        }
 
         public async Task<IActionResult> OnPostAsync()
         {
@@ -79,6 +93,7 @@ namespace Web.Areas.Admin.Pages.Students
             var original = await _db.Students.GetById(Student.Id);
 
             var originalSection = await _db.Sections.GetById(Enrollment.SectionId);
+
             if (originalSection.Seat <= 0)
             {
                 return BadRequest();
@@ -88,6 +103,8 @@ namespace Web.Areas.Admin.Pages.Students
 
             original.Enrollments.Add(Enrollment);
 
+
+
             try
             {
                 await _db.CompleteAsync();
@@ -104,23 +121,21 @@ namespace Web.Areas.Admin.Pages.Students
                 }
             }
 
-            return RedirectToPage("./CourseEnrollment", new { id = Student.Id });
+            return RedirectToPage();
         }
 
 
         public async Task<IActionResult> OnPostDeleteEnrollmentAsync()
         {
-            
+
 
             await _db.CourseEnrollments.Delete(Enrollment.Id);
-
             var original = await _db.CourseEnrollments.GetById(Enrollment.Id);
 
 
             var originalSection = await _db.Sections.GetById(original.SectionId);
 
             originalSection.Seat++;
-          
 
             try
             {
@@ -138,7 +153,7 @@ namespace Web.Areas.Admin.Pages.Students
                 }
             }
 
-            return RedirectToPage("./CourseEnrollment", new { id = Student.Id });
+            return RedirectToPage();
 
 
         }
